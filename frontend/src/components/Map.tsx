@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Map, { NavigationControl, Source, Layer } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Mountain, Satellite } from 'lucide-react';
-import centroid from '@turf/centroid';
-import type { FeatureCollection } from 'geojson';
 import { STYLE_TERRAIN, STYLE_SATELLITE } from '../App';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
@@ -15,7 +13,7 @@ const localDistrictsLineLayer = {
     type: 'line' as const,
     paint: {
         'line-color': '#ef4444', // Red-500
-        'line-width': 2
+        'line-width': 3
     }
 };
 
@@ -26,7 +24,7 @@ const localDistrictsLabelLayer: any = {
     layout: {
         'text-field': ['get', 'DISTRICT'] as const,
         'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'] as const,
-        'text-size': 12,
+        'text-size': 20,
         'text-offset': [0, 0] as const,
         'text-anchor': 'center' as const
     },
@@ -45,31 +43,6 @@ interface MapComponentProps {
 
 export function MapComponent({ mapStyle, setMapStyle, showLocalDistricts }: MapComponentProps) {
     const [cursorCoords, setCursorCoords] = useState<{ lat: number; lng: number } | null>(null);
-    const [districtsData, setDistrictsData] = useState<FeatureCollection | null>(null);
-    const [labelsData, setLabelsData] = useState<FeatureCollection | null>(null);
-
-    useEffect(() => {
-        fetch(LOCAL_DISTRICTS_URL)
-            .then(resp => resp.json())
-            .then((data: FeatureCollection) => {
-                setDistrictsData(data);
-
-                // Calculate centroids for labels to avoid duplicates for MultiPolygons
-                const centroids = data.features.map(feature => {
-                    const center = centroid(feature as any);
-                    return {
-                        ...center,
-                        properties: feature.properties
-                    };
-                });
-
-                setLabelsData({
-                    type: 'FeatureCollection',
-                    features: centroids
-                });
-            })
-            .catch(err => console.error('Failed to load districts:', err));
-    }, []);
 
     const toggleMapStyle = () => {
         setMapStyle(mapStyle === STYLE_TERRAIN ? STYLE_SATELLITE : STYLE_TERRAIN);
@@ -90,14 +63,9 @@ export function MapComponent({ mapStyle, setMapStyle, showLocalDistricts }: MapC
             >
                 <NavigationControl position="top-right" />
 
-                {showLocalDistricts && districtsData && (
-                    <Source id="local-districts" type="geojson" data={districtsData}>
+                {showLocalDistricts && (
+                    <Source id="local-districts" type="geojson" data={LOCAL_DISTRICTS_URL}>
                         <Layer {...localDistrictsLineLayer} />
-                    </Source>
-                )}
-
-                {showLocalDistricts && labelsData && (
-                    <Source id="local-districts-labels" type="geojson" data={labelsData}>
                         <Layer {...localDistrictsLabelLayer} />
                     </Source>
                 )}

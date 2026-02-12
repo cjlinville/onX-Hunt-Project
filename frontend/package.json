@@ -10,8 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@turf/centroid": "^7.3.4",
-    "@turf/helpers": "^7.3.4",
     "lucide-react": "^0.563.0",
     "mapbox-gl": "^3.18.1",
     "react": "^19.2.0",
