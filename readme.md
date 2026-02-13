@@ -4,7 +4,7 @@ Description - Create an interactive, web-based map to support planning and in-fi
 hunting in a new unit for the first time. 
 
 Evaluation Criteria: 
-- Effective use of automation for data collection and standardization 
+-  Effective use of automation for data collection and standardization 
 -  Proficiency in working with geospatial data sources 
 -  Accuracy, clarity, and usability of the map 
 -  Demonstrated understanding of hunting and relevant contextual information 
@@ -22,14 +22,13 @@ For this project I will put together a web app that supports planning and in fie
 Data and sources that will support effective planning in this area include:
 
 Regulatory boundaries:
-- Federal, State, local administrative boundaries
+- Federal and state land boundaries
 - Hunting District Boundary
 
 Planning related Data:
 - Access
 - Roads
 - Water
-- Related Species (food sources)
 - Terrain derivatives
 - Known species range
 

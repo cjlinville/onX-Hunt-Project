@@ -1,0 +1,23 @@
+environment:
+  raw_data_dir: "Data/Raw"
+  processed_data_dir: "Data/Processed"
+
+URLS:
+  Hunting_Districts: "https://services3.arcgis.com/Cdxz8r11hT0MGzg1/arcgis/rest/services/ADMBND_HD_SHEEP/FeatureServer/0"
+  NHD_MAPSERVER: "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer"
+  
+  Feature_Services:
+    - name: "FS_Trails"
+      url: "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_TrailNFSPublish_01/MapServer/0"
+    - name: "Public_Lands"
+      url: "https://services3.arcgis.com/Cdxz8r11hT0MGzg1/arcgis/rest/services/FWPLND_FWPLANDS_PARCELS/FeatureServer/0"
+    - name: "MT_Roads"
+      url: "https://gisservicemt.gov/arcgis/rest/services/MSDI_Framework/MontanaTransportation/MapServer/0"
+    - name: "BHS_Distribution"
+      url: "https://services3.arcgis.com/Cdxz8r11hT0MGzg1/arcgis/rest/services/WILD_DISTRIB_BIGHORNSHEEP/FeatureServer/0"
+
+unit:
+  District_ID: 102
+  Species: bighorn_sheep
+
+
