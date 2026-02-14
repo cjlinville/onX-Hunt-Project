@@ -1,6 +1,13 @@
+steps:
+  get_data: true
+  terrain_derivatives: true
+  process_data: true
+  push_to_map: true
+
 environment:
   raw_data_dir: "Data/Raw"
   processed_data_dir: "Data/Processed"
+  map_data_dir: "../frontend/public/data"
 
 URLS:
   Hunting_Districts: "https://services3.arcgis.com/Cdxz8r11hT0MGzg1/arcgis/rest/services/ADMBND_HD_SHEEP/FeatureServer/0"
@@ -15,9 +22,12 @@ URLS:
       url: "https://gisservicemt.gov/arcgis/rest/services/MSDI_Framework/MontanaTransportation/MapServer/0"
     - name: "BHS_Distribution"
       url: "https://services3.arcgis.com/Cdxz8r11hT0MGzg1/arcgis/rest/services/WILD_DISTRIB_BIGHORNSHEEP/FeatureServer/0"
+    - name: "Parcels"
+      url: "https://gisservicemt.gov/arcgis/rest/services/MSDI_Framework/Parcels/MapServer/0"
 
 unit:
   District_ID: 102
   Species: bighorn_sheep
+  buffer_distance_miles: 1.0
 
 

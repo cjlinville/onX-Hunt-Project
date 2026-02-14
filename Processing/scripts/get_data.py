@@ -172,31 +172,49 @@ def main(config):
 
     print(f"Fetching Hunting District {config['unit']['District_ID']}...")
     district_gdf = get_hunting_district(config)
-    dist_path = raw_data_dir / "Hunting_District.geojson"
+    dist_path = raw_data_dir / "hunting_district.geojson"
     district_gdf.to_file(dist_path, driver="GeoJSON")
     print(f"Saved district to {dist_path}")
 
+    
+    # Calculate buffered geometry for context
+    buffer_miles = config['unit'].get('buffer_distance_miles', 1.0)
+    print(f"Buffering district by {buffer_miles} miles for context...")
+    
+    # Reproject to Montana State Plane (EPSG:32100) for accurate meters buffering
+    district_projected = district_gdf.to_crs("EPSG:32100")
+    buffered_series = district_projected.buffer(buffer_miles * 1609.34) # Convert miles to meters
+    buffered_gdf = gpd.GeoDataFrame(geometry=buffered_series.to_crs("EPSG:4326"))
+    
     # Process generic feature services
     if 'Feature_Services' in config['URLS']:
         for service in config['URLS']['Feature_Services']:
             name = service['name']
             url = service['url']
             
-            gdf = fetch_arcgis_features(url, district_gdf, name)
+            # Use buffered_gdf for fetching context data
+            gdf = fetch_arcgis_features(url, buffered_gdf, name)
             
             if not gdf.empty:
-                out_path = raw_data_dir / f"{name}.geojson"
+                # Rename BHS_Distribution to distribution
+                if name == "BHS_Distribution":
+                    file_name = "distribution"
+                else:
+                    file_name = name.lower()
+                    
+                out_path = raw_data_dir / f"{file_name}.geojson"
                 gdf.to_file(out_path, driver="GeoJSON")
-                print(f"Saved {name} to {out_path}")
+                print(f"Saved {name} as {file_name} to {out_path}")
             else:
                 print(f"No {name} data found in this area.")
 
     # NHD Data (special case with multiple layers)
-    nhd_data = get_nhd_data(config, district_gdf)
+    # Use buffered_gdf for NHD as well
+    nhd_data = get_nhd_data(config, buffered_gdf)
     
     for layer_name, gdf in nhd_data.items():
         if not gdf.empty:
-            out_path = raw_data_dir / f"NHD_{layer_name}.geojson"
+            out_path = raw_data_dir / f"nhd_{layer_name.lower()}.geojson"
             gdf.to_file(out_path, driver="GeoJSON")
             print(f"Saved {layer_name} to {out_path}")
         else:

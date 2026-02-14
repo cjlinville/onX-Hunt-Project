@@ -1,0 +1,190 @@
+{
+  "Hunting_Districts": {
+    "output_layer": "unit_boundary",
+    "source": "Montana FWP",
+    "target_fields": [
+      "unit_id",
+      "species",
+      "source"
+    ],
+    "field_aliases": {
+      "unit_id": [
+        "DISTRICT",
+        "DISTRICT_ID",
+        "HD_ID"
+      ],
+      "species": [],
+      "source": []
+    }
+  },
+  "Public_Lands": {
+    "output_layer": "ownership",
+    "source": "Montana FWP Public Lands",
+    "target_fields": [
+      "owner_type",
+      "agency",
+      "public_access",
+      "source"
+    ],
+    "field_aliases": {
+      "owner_type": [
+        "OWNER_TYPE",
+        "OWNERTYPE",
+        "TYPE"
+      ],
+      "agency": [
+        "AGENCY",
+        "MANAGER"
+      ],
+      "public_access": [
+        "ACCESS",
+        "PUBLIC_ACCESS"
+      ],
+      "source": []
+    }
+  },
+  "Parcels": {
+    "output_layer": "ownership",
+    "source": "Montana Parcels",
+    "target_fields": [
+      "owner_type",
+      "agency",
+      "public_access",
+      "source"
+    ],
+    "field_aliases": {
+      "owner_type": [],
+      "agency": [],
+      "public_access": [],
+      "source": []
+    },
+    "post_process": "parcels_to_private"
+  },
+  "MT_Roads": {
+    "output_layer": "roads",
+    "source": "Montana MSDI Transportation",
+    "target_fields": [
+      "name",
+      "road_class",
+      "surface",
+      "motorized_access",
+      "seasonal_access",
+      "source"
+    ],
+    "field_aliases": {
+      "name": [
+        "NAME",
+        "ROADNAME",
+        "RD_NAME"
+      ],
+      "road_class": [
+        "FUNC_CLASS",
+        "CLASS",
+        "ROADCLASS"
+      ],
+      "surface": [
+        "SURFACE",
+        "SURFTYPE"
+      ],
+      "motorized_access": [
+        "ACCESS",
+        "MOTOR_ACCESS"
+      ],
+      "seasonal_access": [
+        "SEASONAL",
+        "WINTER_CL"
+      ],
+      "source": []
+    },
+    "value_maps": {
+      "motorized_access": {
+        "Y": "yes",
+        "N": "no",
+        "OPEN": "yes",
+        "CLOSED": "no"
+      }
+    }
+  },
+  "FS_Trails": {
+    "output_layer": "trails",
+    "source": "USFS Trails",
+    "target_fields": [
+      "name",
+      "trail_type",
+      "use_type",
+      "source"
+    ],
+    "field_aliases": {
+      "name": [
+        "TRAIL_NAME",
+        "NAME"
+      ],
+      "trail_type": [
+        "TRAIL_TYPE",
+        "TRLTYP"
+      ],
+      "use_type": [
+        "ALLOWEDUSE",
+        "USE",
+        "USES"
+      ],
+      "source": []
+    }
+  },
+  "NHD_Flowlines": {
+    "output_layer": "hydro",
+    "source": "USGS NHD",
+    "target_fields": [
+      "name",
+      "water_type",
+      "perennial",
+      "source"
+    ],
+    "field_aliases": {
+      "name": [
+        "GNIS_NAME",
+        "NAME"
+      ],
+      "water_type": [
+        "FTYPE"
+      ],
+      "perennial": [
+        "FCODE"
+      ],
+      "source": []
+    },
+    "post_process": "nhd_flowline_logic"
+  },
+  "NHD_Waterbodies": {
+    "source": "USGS NHD",
+    "target_fields": [
+      "name",
+      "water_type",
+      "perennial",
+      "source"
+    ],
+    "field_aliases": {
+      "name": [
+        "GNIS_NAME",
+        "NAME"
+      ],
+      "water_type": [
+        "FTYPE"
+      ],
+      "perennial": [],
+      "source": []
+    }
+  },
+  "distribution.geojson": {
+    "source": "Montana FWP",
+    "field_map": {
+      "USETYPE":"Range"
+    },
+    "value_maps": {
+      "Range": {
+        "G": "General Range",
+        "GW": "Winter Range"
+      }
+    }
+  }
+}
