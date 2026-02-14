@@ -26,8 +26,7 @@ Regulatory boundaries:
 - Hunting District Boundary
 
 Planning related Data:
-- Access
-- Roads
+- Access (roads - trails)
 - Water
 - Terrain derivatives
 - Known species range

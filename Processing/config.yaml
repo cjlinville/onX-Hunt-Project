@@ -1,6 +1,6 @@
 steps:
-  get_data: true
-  terrain_derivatives: true
+  get_data: false
+  terrain_derivatives: false
   process_data: true
   push_to_map: true
 

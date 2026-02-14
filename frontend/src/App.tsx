@@ -15,6 +15,9 @@ function App() {
   const [showNAIP, setShowNAIP] = useState(false);
   const [naipYear, setNaipYear] = useState('2023');
   const [showBHS, setShowBHS] = useState(false);
+  const [showElevationBands, setShowElevationBands] = useState(false);
+  const [showSlopeMask, setShowSlopeMask] = useState(false);
+  const [showParcels, setShowParcels] = useState(false);
 
   return (
     <div className="flex h-screen w-screen bg-slate-50 overflow-hidden">
@@ -29,12 +32,18 @@ function App() {
         setShowTrails={setShowTrails}
         showPublicLands={showPublicLands}
         setShowPublicLands={setShowPublicLands}
+        showParcels={showParcels}
+        setShowParcels={setShowParcels}
         showNAIP={showNAIP}
         setShowNAIP={setShowNAIP}
         naipYear={naipYear}
         setNaipYear={setNaipYear}
         showBHS={showBHS}
         setShowBHS={setShowBHS}
+        showElevationBands={showElevationBands}
+        setShowElevationBands={setShowElevationBands}
+        showSlopeMask={showSlopeMask}
+        setShowSlopeMask={setShowSlopeMask}
       />
       <main className="flex-1 h-full relative">
         <MapComponent
@@ -45,9 +54,12 @@ function App() {
           showMTRoads={showMTRoads}
           showTrails={showTrails}
           showPublicLands={showPublicLands}
+          showParcels={showParcels}
           showNAIP={showNAIP}
           naipYear={naipYear}
           showBHS={showBHS}
+          showElevationBands={showElevationBands}
+          showSlopeMask={showSlopeMask}
         />
       </main>
     </div>
