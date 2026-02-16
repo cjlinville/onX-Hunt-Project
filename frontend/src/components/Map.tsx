@@ -36,13 +36,68 @@ const huntingDistrictLineLayer = {
     }
 };
 
+const huntingDistrictLabelLayer: any = {
+    id: 'hunting-district-label',
+    type: 'symbol',
+    layout: {
+        'text-field': ['get', 'unit_name'],
+        'text-size': 12,
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-anchor': 'center'
+    },
+    paint: {
+        'text-color': '#b91c1c', // Red-700
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 2
+    }
+};
+
+const huntingDistrictHitLayer = {
+    id: 'hunting-district-hit',
+    type: 'line' as const,
+    paint: {
+        'line-width': 20,
+        'line-opacity': 0
+    }
+};
+
 const mtRoadsLayer = {
     id: 'mt-roads',
     type: 'line' as const,
     paint: {
-        'line-color': '#1e293b', // Slate-800
-        'line-width': 1.2
-    }
+        'line-color': '#31425e', // Slate-800
+        'line-width': 2
+    },
+    minzoom: 10
+};
+
+const mtRoadsLabelLayer: any = {
+    id: 'mt-roads-label',
+    type: 'symbol',
+    layout: {
+        'text-field': ['get', 'Name'],
+        'text-size': 10,
+        'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+        'symbol-placement': 'line',
+        'text-max-angle': 30,
+        'symbol-spacing': 500
+    },
+    paint: {
+        'text-color': '#000000',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 2
+    },
+    minzoom: 12
+};
+
+const mtRoadsHitLayer = {
+    id: 'mt-roads-hit',
+    type: 'line' as const,
+    paint: {
+        'line-width': 20,
+        'line-opacity': 0
+    },
+    minzoom: 10
 };
 
 const fsTrailsLayer = {
@@ -52,9 +107,38 @@ const fsTrailsLayer = {
         'line-color': '#f97316', // Orange-500
         'line-width': 2,
         'line-dasharray': [2, 1]
-    }
+    },
+    minzoom: 10
 };
 
+const fsTrailsLabelLayer: any = {
+    id: 'fs-trails-label',
+    type: 'symbol',
+    layout: {
+        'text-field': ['get', 'Name'],
+        'text-size': 10,
+        'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+        'symbol-placement': 'line',
+        'text-max-angle': 30,
+        'symbol-spacing': 500
+    },
+    paint: {
+        'text-color': '#c2410c', // Orange-700
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 2
+    },
+    minzoom: 10
+};
+
+const fsTrailsHitLayer = {
+    id: 'fs-trails-hit',
+    type: 'line' as const,
+    paint: {
+        'line-width': 20,
+        'line-opacity': 0
+    },
+    minzoom: 10
+};
 
 const publicLandsLayer = {
     id: 'public-lands',
@@ -117,7 +201,37 @@ const nhdFlowlineLayer = {
     paint: {
         'line-color': '#3b82f6', // Blue-500
         'line-width': 1.5
-    }
+    },
+    minzoom: 11
+};
+
+const nhdFlowlineLabelLayer: any = {
+    id: 'nhd-flowline-label',
+    type: 'symbol',
+    layout: {
+        'text-field': ['get', 'Name'],
+        'text-size': 10,
+        'text-font': ['Open Sans Italic', 'Arial Unicode MS Regular'],
+        'symbol-placement': 'line',
+        'text-max-angle': 30,
+        'symbol-spacing': 500
+    },
+    paint: {
+        'text-color': '#1d4ed8', // Blue-700
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 2
+    },
+    minzoom: 11
+};
+
+const nhdFlowlineHitLayer = {
+    id: 'nhd-flowline-hit',
+    type: 'line' as const,
+    paint: {
+        'line-width': 20,
+        'line-opacity': 0
+    },
+    minzoom: 11
 };
 
 const elevationBandsLayer: any = {
@@ -181,15 +295,15 @@ export function MapComponent({
         if (showElevationBands) ids.push('elevation-bands');
         if (showSlopeMask) ids.push('slope-mask');
         if (showPublicLands) ids.push('public-lands');
-        if (showParcels) ids.push('parcels');
+        if (showParcels) ids.push('parcels-labels');
         if (showBHS) ids.push('bhs-distribution');
-        if (showMTRoads) ids.push('mt-roads');
+        if (showMTRoads) ids.push('mt-roads-hit');
         if (showNHD) {
             ids.push('nhd-waterbody-fill');
-            ids.push('nhd-flowline');
+            ids.push('nhd-flowline-hit');
         }
-        if (showTrails) ids.push('fs-trails');
-        if (showLocalDistricts) ids.push('hunting-district-line');
+        if (showTrails) ids.push('fs-trails-hit');
+        if (showLocalDistricts) ids.push('hunting-district-hit');
         return ids;
     }, [showElevationBands, showSlopeMask, showPublicLands, showBHS, showMTRoads, showNHD, showTrails, showLocalDistricts]);
 
@@ -279,6 +393,8 @@ export function MapComponent({
                 {showMTRoads && (
                     <Source id="mt-roads" type="geojson" data={MT_ROADS_URL}>
                         <Layer {...mtRoadsLayer} />
+                        <Layer {...mtRoadsLabelLayer} />
+                        <Layer {...mtRoadsHitLayer} />
                     </Source>
                 )}
 
@@ -290,6 +406,8 @@ export function MapComponent({
                         </Source>
                         <Source id="nhd-flowlines" type="geojson" data={NHD_FLOWLINE_URL}>
                             <Layer {...nhdFlowlineLayer} />
+                            <Layer {...nhdFlowlineLabelLayer} />
+                            <Layer {...nhdFlowlineHitLayer} />
                         </Source>
                     </>
                 )}
@@ -297,17 +415,22 @@ export function MapComponent({
                 {showTrails && (
                     <Source id="fs-trails" type="geojson" data={FS_TRAILS_URL}>
                         <Layer {...fsTrailsLayer} />
+                        <Layer {...fsTrailsLabelLayer} />
+                        <Layer {...fsTrailsHitLayer} />
                     </Source>
                 )}
 
                 {showLocalDistricts && (
                     <Source id="hunting-district" type="geojson" data={HUNTING_DISTRICT_URL}>
                         <Layer {...huntingDistrictLineLayer} />
+                        <Layer {...huntingDistrictLabelLayer} />
+                        <Layer {...huntingDistrictHitLayer} />
                     </Source>
                 )}
 
                 {popupInfo && (
                     <Popup
+                        key={`${popupInfo.lngLat.lat}-${popupInfo.lngLat.lng}`}
                         longitude={popupInfo.lngLat.lng}
                         latitude={popupInfo.lngLat.lat}
                         anchor="bottom"
@@ -319,7 +442,7 @@ export function MapComponent({
                         <div className="bg-slate-900 text-slate-100 rounded-lg overflow-hidden shadow-2xl border border-slate-700">
                             <div className="flex items-center justify-between px-3 py-2 bg-slate-800 border-b border-slate-700">
                                 <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
-                                    {popupInfo.feature.layer.id.replace(/-/g, ' ')}
+                                    {popupInfo.feature.layer.id.replace(/-hit/g, '').replace(/-/g, ' ')}
                                 </span>
                                 <button
                                     onClick={() => setPopupInfo(null)}

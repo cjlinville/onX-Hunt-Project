@@ -1,7 +1,7 @@
 import yaml
 from pathlib import Path
 
-from scripts import get_data, process_data, terrain_derivatives, push_to_map
+from scripts import get_data, process_data, push_to_map
 
 
 def main(config):
@@ -14,11 +14,6 @@ def main(config):
         get_data.main(config)
 
     
-    # 2. Terrain Derivatives
-    if config['steps']['terrain_derivatives']:
-        print(50*"-")
-        print("Running terrain derivatives pipeline...\n")
-        terrain_derivatives.main(config)
 
     # 3. Process Data
     if config['steps']['process_data']:

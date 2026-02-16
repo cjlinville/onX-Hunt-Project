@@ -82,30 +82,49 @@ export function Sidebar({
                 {activeTab === 'Layers' && (
                     <div className="px-4 py-2 hidden md:block border-b border-slate-800 pb-4">
                         <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2">Data Layers</h3>
-                        <div className="space-y-1">
-                            {/* Hunting Districts */}
-                            <label className={`flex items-center p-2 rounded cursor-pointer border transition-colors ${showLocalDistricts ? 'bg-slate-800 border-red-500/50 text-white' : 'border-transparent hover:bg-slate-800'}`}>
-                                <input
-                                    type="checkbox"
-                                    className="hidden"
-                                    checked={showLocalDistricts}
-                                    onChange={(e) => setShowLocalDistricts(e.target.checked)}
-                                />
-                                <MapIcon className="w-4 h-4 text-red-500 mr-3" />
-                                <span className="text-sm">Hunting Districts</span>
-                            </label>
+                        <div className="space-y-2">
+                            {/* Regulation and Land Group */}
+                            <CollapsibleSection title="Regulation and Land" icon={<Map className="w-4 h-4 text-red-400" />}>
+                                <div className="space-y-1 pt-1">
+                                    {/* Hunting Districts */}
+                                    <label className={`flex items-center p-2 rounded cursor-pointer border transition-colors ${showLocalDistricts ? 'bg-slate-800 border-red-500/50 text-white' : 'border-transparent hover:bg-slate-800'}`}>
+                                        <input
+                                            type="checkbox"
+                                            className="hidden"
+                                            checked={showLocalDistricts}
+                                            onChange={(e) => setShowLocalDistricts(e.target.checked)}
+                                        />
+                                        <MapIcon className="w-4 h-4 text-red-500 mr-3" />
+                                        <span className="text-sm">Hunting Districts</span>
+                                    </label>
 
-                            {/* NHD Hydrography */}
-                            <label className={`flex items-center p-2 rounded cursor-pointer border transition-colors ${showNHD ? 'bg-slate-800 border-blue-500/50 text-white' : 'border-transparent hover:bg-slate-800'}`}>
-                                <input
-                                    type="checkbox"
-                                    className="hidden"
-                                    checked={showNHD}
-                                    onChange={(e) => setShowNHD(e.target.checked)}
-                                />
-                                <Layers className="w-4 h-4 text-blue-400 mr-3" />
-                                <span className="text-sm">NHD Hydrography</span>
-                            </label>
+                                    {/* Public Lands */}
+                                    <label className={`flex items-center p-2 rounded cursor-pointer border transition-all duration-200 ${showPublicLands ? 'bg-slate-800 border-violet-500/50 text-white shadow-sm' : 'border-transparent hover:bg-slate-800/50 hover:text-slate-200'}`}>
+                                        <input
+                                            type="checkbox"
+                                            className="hidden"
+                                            checked={showPublicLands}
+                                            onChange={(e) => setShowPublicLands(e.target.checked)}
+                                        />
+                                        <Trees className="w-4 h-4 text-violet-400 mr-3" />
+                                        <span className="text-sm">Public Lands</span>
+                                    </label>
+
+                                    {/* MT Parcels */}
+                                    <label className={`flex items-center p-2 rounded cursor-pointer border transition-all duration-200 ${showParcels ? 'bg-slate-800/80 border-slate-500/30 text-white shadow-sm' : 'border-transparent hover:bg-slate-800/30'}`}>
+                                        <input
+                                            type="checkbox"
+                                            className="hidden"
+                                            checked={showParcels}
+                                            onChange={(e) => setShowParcels(e.target.checked)}
+                                        />
+                                        <Layers className="w-3.5 h-3.5 text-slate-400 mr-3" />
+                                        <span className="text-sm">MT Parcels</span>
+                                    </label>
+
+
+                                </div>
+                            </CollapsibleSection>
 
                             {/* Access Group */}
                             <CollapsibleSection title="Access" icon={<Car className="w-4 h-4 text-emerald-400" />}>
@@ -118,7 +137,7 @@ export function Sidebar({
                                             onChange={(e) => setShowMTRoads(e.target.checked)}
                                         />
                                         <Car className="w-3.5 h-3.5 text-emerald-500/70 mr-3" />
-                                        <span className="text-xs">MT Highway/Roads</span>
+                                        <span className="text-sm">MT Highway/Roads</span>
                                     </label>
 
                                     <label className={`flex items-center p-2 rounded cursor-pointer border transition-all duration-200 ${showTrails ? 'bg-slate-800/80 border-orange-500/30 text-white shadow-sm' : 'border-transparent hover:bg-slate-800/30'}`}>
@@ -129,49 +148,39 @@ export function Sidebar({
                                             onChange={(e) => setShowTrails(e.target.checked)}
                                         />
                                         <Mountain className="w-3.5 h-3.5 text-orange-500/70 mr-3" />
-                                        <span className="text-xs">Forest Service Trails</span>
-                                    </label>
-
-                                    <label className={`flex items-center p-2 rounded cursor-pointer border transition-all duration-200 ${showParcels ? 'bg-slate-800/80 border-slate-500/30 text-white shadow-sm' : 'border-transparent hover:bg-slate-800/30'}`}>
-                                        <input
-                                            type="checkbox"
-                                            className="hidden"
-                                            checked={showParcels}
-                                            onChange={(e) => setShowParcels(e.target.checked)}
-                                        />
-                                        <Layers className="w-3.5 h-3.5 text-slate-400 mr-3" />
-                                        <span className="text-xs">MT Parcels</span>
+                                        <span className="text-sm">Forest Service Trails</span>
                                     </label>
                                 </div>
                             </CollapsibleSection>
 
-                            {/* Public Lands */}
-                            <label className={`flex items-center p-2 rounded cursor-pointer border transition-all duration-200 ${showPublicLands ? 'bg-slate-800 border-violet-500/50 text-white shadow-sm' : 'border-transparent hover:bg-slate-800/50 hover:text-slate-200'}`}>
-                                <input
-                                    type="checkbox"
-                                    className="hidden"
-                                    checked={showPublicLands}
-                                    onChange={(e) => setShowPublicLands(e.target.checked)}
-                                />
-                                <Trees className="w-4 h-4 text-violet-400 mr-3" />
-                                <span className="text-sm">Public Lands</span>
-                            </label>
-
-                            {/* Bighorn Sheep Distribution */}
-                            <label className={`flex items-center p-2 rounded cursor-pointer border transition-all duration-200 ${showBHS ? 'bg-slate-800 border-yellow-600/50 text-white shadow-sm' : 'border-transparent hover:bg-slate-800/50 hover:text-slate-200'}`}>
-                                <input
-                                    type="checkbox"
-                                    className="hidden"
-                                    checked={showBHS}
-                                    onChange={(e) => setShowBHS(e.target.checked)}
-                                />
-                                <PawPrint className="w-4 h-4 text-yellow-500 mr-3" />
-                                <span className="text-sm">Bighorn Sheep</span>
-                            </label>
-
-                            {/* Elevation Derivatives */}
-                            <CollapsibleSection title="Elevation Derivatives" icon={<Mountain className="w-4 h-4 text-lime-400" />}>
+                            {/* Habitat Group */}
+                            <CollapsibleSection title="Habitat" icon={<Trees className="w-4 h-4 text-green-400" />}>
                                 <div className="space-y-1 pt-1">
+                                    {/* NHD Hydrography */}
+                                    <label className={`flex items-center p-2 rounded cursor-pointer border transition-colors ${showNHD ? 'bg-slate-800 border-blue-500/50 text-white' : 'border-transparent hover:bg-slate-800'}`}>
+                                        <input
+                                            type="checkbox"
+                                            className="hidden"
+                                            checked={showNHD}
+                                            onChange={(e) => setShowNHD(e.target.checked)}
+                                        />
+                                        <Layers className="w-4 h-4 text-blue-400 mr-3" />
+                                        <span className="text-sm">NHD Hydrography</span>
+                                    </label>
+
+                                    {/* Bighorn Sheep Distribution */}
+                                    <label className={`flex items-center p-2 rounded cursor-pointer border transition-all duration-200 ${showBHS ? 'bg-slate-800 border-yellow-600/50 text-white shadow-sm' : 'border-transparent hover:bg-slate-800/50 hover:text-slate-200'}`}>
+                                        <input
+                                            type="checkbox"
+                                            className="hidden"
+                                            checked={showBHS}
+                                            onChange={(e) => setShowBHS(e.target.checked)}
+                                        />
+                                        <PawPrint className="w-4 h-4 text-yellow-500 mr-3" />
+                                        <span className="text-sm">MT FWS Bighorn Sheep Distribution</span>
+                                    </label>
+
+                                    {/* Elevation Bands */}
                                     <label className={`flex items-center p-2 rounded cursor-pointer border transition-all duration-200 ${showElevationBands ? 'bg-slate-800/80 border-lime-500/30 text-white' : 'border-transparent hover:bg-slate-800/30'}`}>
                                         <input
                                             type="checkbox"
@@ -180,9 +189,10 @@ export function Sidebar({
                                             onChange={(e) => setShowElevationBands(e.target.checked)}
                                         />
                                         <Layers className="w-3.5 h-3.5 text-lime-500/70 mr-3" />
-                                        <span className="text-xs">Elevation Bands</span>
+                                        <span className="text-sm">Elevation Bands</span>
                                     </label>
 
+                                    {/* Steep Slope */}
                                     <label className={`flex items-center p-2 rounded cursor-pointer border transition-all duration-200 ${showSlopeMask ? 'bg-slate-800/80 border-red-600/30 text-white' : 'border-transparent hover:bg-slate-800/30'}`}>
                                         <input
                                             type="checkbox"
@@ -191,18 +201,14 @@ export function Sidebar({
                                             onChange={(e) => setShowSlopeMask(e.target.checked)}
                                         />
                                         <AlertTriangle className="w-3.5 h-3.5 text-red-500 mr-3" />
-                                        <span className="text-xs">Steep Slope ({'>'}45°)</span>
+                                        <span className="text-sm">Steep Slope ({'>'}45°)</span>
                                     </label>
                                 </div>
                             </CollapsibleSection>
 
-                            <div className="pt-2">
-                                <div className="h-px bg-slate-800 mx-2 mb-3" />
-                            </div>
-
                             {/* NAIP Imagery */}
-                            <div className={`p-3 rounded border transition-all duration-200 ${showNAIP ? 'bg-slate-800 border-indigo-500/50 text-white shadow-md' : 'border-transparent hover:bg-slate-800/50'}`}>
-                                <label className="flex items-center cursor-pointer mb-3">
+                            <div className={`p-2 rounded border transition-all duration-200 ${showNAIP ? 'bg-slate-800 border-indigo-500/50 text-white shadow-md' : 'border-transparent hover:bg-slate-800/50'}`}>
+                                <label className="flex items-center cursor-pointer mb-2">
                                     <input
                                         type="checkbox"
                                         className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-indigo-500 focus:ring-indigo-500 mr-3"
@@ -214,7 +220,6 @@ export function Sidebar({
                                 </label>
                                 {showNAIP && (
                                     <div className="ml-7 space-y-2">
-                                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Select Year</p>
                                         <select
                                             value={naipYear}
                                             onChange={(e) => setNaipYear(e.target.value)}
@@ -252,7 +257,7 @@ function SidebarItem({ icon, label, active = false, onClick }: { icon: React.Rea
 }
 
 function CollapsibleSection({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(true);
 
     return (
         <div className="border border-slate-800 rounded overflow-hidden">
@@ -267,7 +272,7 @@ function CollapsibleSection({ title, icon, children }: { title: string; icon: Re
                 {isOpen ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />}
             </button>
             {isOpen && (
-                <div className="px-2 pb-2 bg-slate-900/50">
+                <div className="pl-6 pr-2 pb-2 bg-slate-900/50">
                     {children}
                 </div>
             )}

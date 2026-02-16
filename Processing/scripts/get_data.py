@@ -4,6 +4,68 @@ from shapely.geometry import shape, box
 import os
 from pathlib import Path
 
+# TNM Constants
+TNM_PRODUCTS_URL = "https://tnmaccess.nationalmap.gov/api/v1/products"
+DATASET_NAME = "National Elevation Dataset (NED) 1/3 arc-second"
+PRODUCT_FORMAT = "GeoTIFF"
+MAX_ITEMS = 200
+
+def tnm_search_dem_tiles(bbox):
+    """
+    Returns a list of download URLs for DEM tiles that intersect the bbox.
+    bbox: (min_lon, min_lat, max_lon, max_lat) in WGS84
+    """
+    bbox_str = ",".join(str(v) for v in bbox)
+
+    urls = []
+    offset = 0
+
+    while True:
+        params = {
+            "datasets": DATASET_NAME,
+            "prodFormats": PRODUCT_FORMAT,
+            "bbox": bbox_str,
+            "outputFormat": "JSON",
+            "max": str(MAX_ITEMS),
+            "offset": str(offset),
+        }
+
+        r = requests.get(TNM_PRODUCTS_URL, params=params, timeout=120)
+        r.raise_for_status()
+        data = r.json()
+
+        items = data.get("items", [])
+        if not items:
+            break
+
+        for item in items:
+            url = item.get("downloadURL")
+            if url:
+                urls.append(url)
+
+        if len(items) < MAX_ITEMS:
+            break
+
+        offset += MAX_ITEMS
+
+    return urls
+
+
+def download_file(url, out_path):
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if out_path.exists() and out_path.stat().st_size > 0:
+        return out_path
+
+    with requests.get(url, stream=True, timeout=300) as r:
+        r.raise_for_status()
+        with open(out_path, "wb") as f:
+            for chunk in r.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    f.write(chunk)
+
+    return out_path
+
 def get_hunting_district(config):
     url = config['URLS']['Hunting_Districts']
     query = f"NAME = '{config['unit']['District_ID']}'"
@@ -219,6 +281,36 @@ def main(config):
             print(f"Saved {layer_name} to {out_path}")
         else:
             print(f"No {layer_name} data found in this area.")
+
+    # ---------------------------
+    # DEM Tiles (TNM)
+    # ---------------------------
+    print(f"Searching TNM for DEM tiles (Buffer: {buffer_miles} miles)...")
+    # Use the buffered bbox for DEM search
+    total_bounds = buffered_gdf.total_bounds
+    # total_bounds is (minx, miny, maxx, maxy)
+    
+    try:
+        urls = tnm_search_dem_tiles(total_bounds)
+    except Exception as e:
+        print(f"Error searching TNM: {e}")
+        urls = []
+
+    if urls:
+        print(f"Found {len(urls)} DEM tiles. Downloading...")
+        dem_tiles_dir = raw_data_dir / "dem_tiles"
+        dem_tiles_dir.mkdir(parents=True, exist_ok=True)
+        
+        for url in urls:
+            fname = url.split("/")[-1].split("?")[0]
+            if not fname.lower().endswith((".tif", ".tiff")):
+                fname += ".tif"
+            out_path = dem_tiles_dir / fname
+            download_file(url, out_path)
+            # print(f"Downloaded: {fname}") # reduce spam
+        print(f"Downloaded {len(urls)} tiles to {dem_tiles_dir}")
+    else:
+        print("No DEM tiles found.")
 
 if __name__ == "__main__":
     import yaml

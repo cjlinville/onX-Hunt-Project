@@ -1,3 +1,8 @@
+unit:
+  District_ID: 102
+  Species: bighorn_sheep
+  buffer_distance_miles: 1.0
+
 steps:
   get_data: false
   terrain_derivatives: false
@@ -25,9 +30,5 @@ URLS:
     - name: "Parcels"
       url: "https://gisservicemt.gov/arcgis/rest/services/MSDI_Framework/Parcels/MapServer/0"
 
-unit:
-  District_ID: 102
-  Species: bighorn_sheep
-  buffer_distance_miles: 1.0
 
 

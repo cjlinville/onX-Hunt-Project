@@ -5,77 +5,65 @@ import geopandas as gpd
 from shapely.geometry import LineString, MultiLineString, Point
 
 
-def remove_isolated_edges(gdf: gpd.GeoDataFrame, tolerance: float = 0.0) -> gpd.GeoDataFrame:
-    
+def remove_isolated_edges(
+    gdf: gpd.GeoDataFrame,
+    tolerance: float = 0.0,
+) -> gpd.GeoDataFrame:
+    """
+    Drop line features that do not connect to any other line at either endpoint.
+
+    If tolerance == 0: an endpoint must touch/intersect another line exactly.
+    If tolerance  > 0: an endpoint-buffer (radius=tolerance) must intersect another line.
+
+    Returns only non-null line geometries from the input (same as the original behavior).
+    """
     if gdf.empty:
         return gdf.copy()
 
-    if gdf.crs is None:
+    if tolerance > 0 and gdf.crs is None:
         raise ValueError("GeoDataFrame has no CRS. Set gdf.crs before using tolerance.")
 
-    lines = gdf[gdf.geometry.notna()].copy()
+    lines = gdf.loc[gdf.geometry.notna()].copy()
     if lines.empty:
         return lines
 
     sindex = lines.sindex
-    geoms = lines.geometry
 
-    def endpoints(geom):
+    def iter_endpoints(geom):
         if geom is None:
-            return []
+            return
         if isinstance(geom, LineString):
             coords = list(geom.coords)
-            if len(coords) < 2:
-                return []
-            return [Point(coords[0]), Point(coords[-1])]
+            if len(coords) >= 2:
+                yield Point(coords[0])
+                yield Point(coords[-1])
+            return
         if isinstance(geom, MultiLineString):
-            pts = []
             for part in geom.geoms:
                 coords = list(part.coords)
                 if len(coords) >= 2:
-                    pts.append(Point(coords[0]))
-                    pts.append(Point(coords[-1]))
-            return pts
-        return []
+                    yield Point(coords[0])
+                    yield Point(coords[-1])
 
-    keep_mask = []
-
-    for idx, geom in geoms.items():
-        pts = endpoints(geom)
-        if not pts:
-            keep_mask.append(False)
-            continue
-
-        connected = False
-
-        for pt in pts:
+    def is_connected(row_idx, geom) -> bool:
+        for pt in iter_endpoints(geom) or ():
             query_geom = pt if tolerance <= 0 else pt.buffer(tolerance)
 
-            # candidates are index positions from spatial index
             candidate_pos = list(sindex.intersection(query_geom.bounds))
             if not candidate_pos:
                 continue
 
             candidates = lines.iloc[candidate_pos]
-
-            # remove self
-            candidates = candidates[candidates.index != idx]
+            candidates = candidates[candidates.index != row_idx]
             if candidates.empty:
                 continue
 
-            if tolerance <= 0:
-                # exact: endpoint intersects another line (touching counts as intersects)
-                if candidates.intersects(pt).any():
-                    connected = True
-                    break
-            else:
-                # tolerant: endpoint buffer intersects another line
-                if candidates.intersects(query_geom).any():
-                    connected = True
-                    break
+            if candidates.intersects(query_geom).any():
+                return True
 
-        keep_mask.append(connected)
+        return False
 
+    keep_mask = [is_connected(idx, geom) for idx, geom in lines.geometry.items()]
     return lines.loc[keep_mask].copy()
 
 def remove_lines_with_no_name(gdf):
