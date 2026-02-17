@@ -5,7 +5,7 @@ unit:
 
 steps:
   get_data: false
-  terrain_derivatives: true
+  terrain_derivatives: false
   process_data: true
   push_to_map: true
 

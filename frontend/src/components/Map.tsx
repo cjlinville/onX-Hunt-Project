@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import Map, { NavigationControl, Source, Layer, Popup } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Mountain, Satellite, X } from 'lucide-react';
+import { Mountain, Satellite, X, Ruler, Trash2 } from 'lucide-react';
+import * as turf from '@turf/turf';
 import { STYLE_TERRAIN, STYLE_SATELLITE } from '../App';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
@@ -297,6 +298,16 @@ export function MapComponent({
     const [popupInfo, setPopupInfo] = useState<{ feature: any; lngLat: { lng: number; lat: number } } | null>(null);
     const [cursor, setCursor] = useState<string>('auto');
     const [suitabilityMeta, setSuitabilityMeta] = useState<{ bounds: number[][]; url: string } | null>(null);
+    const [selectedTrailName, setSelectedTrailName] = useState<string | null>(null);
+    const [isMeasuring, setIsMeasuring] = useState(false);
+    const [measurementPoints, setMeasurementPoints] = useState<number[][]>([]);
+    const [measurementUnit, setMeasurementUnit] = useState<'miles' | 'yards'>('miles');
+
+    const totalDistance = useMemo(() => {
+        if (measurementPoints.length < 2) return 0;
+        const line = turf.lineString(measurementPoints);
+        return turf.length(line, { units: measurementUnit });
+    }, [measurementPoints, measurementUnit]);
 
     // Fetch suitability metadata
     useEffect(() => {
@@ -326,22 +337,35 @@ export function MapComponent({
         if (showLocalDistricts) ids.push('hunting-district-hit');
         if (showHabitatSuitability) ids.push('habitat-suitability');
         return ids;
-    }, [showElevationBands, showSlopeMask, showPublicLands, showBHS, showMTRoads, showNHD, showTrails, showLocalDistricts, showHabitatSuitability]);
+    }, [showElevationBands, showSlopeMask, showPublicLands, showBHS, showMTRoads, showNHD, showTrails, showLocalDistricts, showHabitatSuitability, showParcels]);
 
     const onMouseEnter = useCallback(() => setCursor('pointer'), []);
     const onMouseLeave = useCallback(() => setCursor('auto'), []);
 
     const onClick = useCallback((event: any) => {
         const feature = event.features && event.features[0];
+
+        if (isMeasuring) {
+            const { lng, lat } = event.lngLat;
+            setMeasurementPoints(prev => [...prev, [lng, lat]]);
+            return;
+        }
+
         if (feature) {
             setPopupInfo({
                 feature,
                 lngLat: event.lngLat
             });
+
+            // Handle trail selection for halo effect
+            if (feature.layer.id === 'fs-trails-hit') {
+                setSelectedTrailName(feature.properties.Name || null);
+            }
         } else {
             setPopupInfo(null);
+            setSelectedTrailName(null);
         }
-    }, []);
+    }, [isMeasuring]);
 
     return (
         <div className="h-full w-full relative">
@@ -362,6 +386,51 @@ export function MapComponent({
                 interactiveLayerIds={interactiveLayerIds}
             >
                 <NavigationControl position="top-right" />
+
+                {/* Measurement Path */}
+                {measurementPoints.length > 0 && (
+                    <Source id="measurement" type="geojson" data={{
+                        type: 'FeatureCollection',
+                        features: [
+                            {
+                                type: 'Feature',
+                                geometry: {
+                                    type: 'LineString',
+                                    coordinates: measurementPoints
+                                },
+                                properties: {}
+                            },
+                            ...measurementPoints.map((pt, i) => ({
+                                type: 'Feature',
+                                geometry: {
+                                    type: 'Point',
+                                    coordinates: pt
+                                },
+                                properties: { index: i }
+                            }))
+                        ]
+                    } as any}>
+                        <Layer
+                            id="measurement-line"
+                            type="line"
+                            paint={{
+                                'line-color': '#ffffff',
+                                'line-width': 3,
+                                'line-dasharray': [2, 1]
+                            }}
+                        />
+                        <Layer
+                            id="measurement-points"
+                            type="circle"
+                            paint={{
+                                'circle-radius': 4,
+                                'circle-color': '#3b82f6',
+                                'circle-stroke-width': 2,
+                                'circle-stroke-color': '#ffffff'
+                            }}
+                        />
+                    </Source>
+                )}
 
                 {showNAIP && (
                     <Source
@@ -446,6 +515,20 @@ export function MapComponent({
 
                 {showTrails && (
                     <Source id="fs-trails" type="geojson" data={FS_TRAILS_URL}>
+                        {selectedTrailName && (
+                            <Layer
+                                id="fs-trails-halo"
+                                type="line"
+                                filter={['==', ['get', 'Name'], selectedTrailName]}
+                                paint={{
+                                    'line-color': '#ffffff',
+                                    'line-width': 8,
+                                    'line-opacity': 0.75,
+                                    'line-blur': 2
+                                }}
+                                beforeId="fs-trails"
+                            />
+                        )}
                         <Layer {...fsTrailsLayer} />
                         <Layer {...fsTrailsLabelLayer} />
                         <Layer {...fsTrailsHitLayer} />
@@ -508,23 +591,76 @@ export function MapComponent({
             </div>
 
             {/* Basemap Toggle Button */}
-            <button
-                onClick={toggleMapStyle}
-                className="absolute bottom-6 right-4 bg-white text-slate-700 hover:bg-slate-50 p-2 rounded-lg shadow-lg border border-slate-200 flex items-center gap-2 transition-all font-medium text-sm"
-                title={mapStyle === STYLE_TERRAIN ? "Switch to Satellite" : "Switch to Terrain"}
-            >
-                {mapStyle === STYLE_TERRAIN ? (
-                    <>
-                        <Satellite className="w-5 h-5 text-blue-600" />
-                        <span>Satellite</span>
-                    </>
-                ) : (
-                    <>
-                        <Mountain className="w-5 h-5 text-green-600" />
-                        <span>Terrain</span>
-                    </>
-                )}
-            </button>
+            <div className="absolute bottom-6 right-4 flex flex-col gap-2 scale-90 md:scale-100 origin-bottom-right">
+                {/* Distance Measurement UI */}
+                <div className="flex flex-col gap-2 items-end">
+                    {measurementPoints.length > 0 && (
+                        <div
+                            className="bg-slate-900/90 text-white px-3 py-2 rounded-lg shadow-xl border border-slate-700 flex items-center gap-3 backdrop-blur-sm animate-in fade-in slide-in-from-right-4 cursor-pointer hover:bg-slate-800 transition-colors"
+                            onClick={() => setMeasurementUnit(prev => prev === 'miles' ? 'yards' : 'miles')}
+                            title="Click to toggle units (Miles/Yards)"
+                        >
+                            <div className="flex flex-col">
+                                <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold leading-none mb-1">Distance</span>
+                                <span className="text-sm font-mono font-bold leading-none">
+                                    {totalDistance.toFixed(measurementUnit === 'miles' ? 2 : 0)}
+                                    <span className="text-blue-400 ml-1">{measurementUnit === 'miles' ? 'mi' : 'yd'}</span>
+                                </span>
+                            </div>
+                            <div className="w-px h-6 bg-slate-700 mx-1" />
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMeasurementPoints([]);
+                                }}
+                                className="p-1 px-2 hover:bg-red-500/20 hover:text-red-400 text-slate-400 rounded transition-colors"
+                                title="Clear measurements"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => {
+                            setIsMeasuring(!isMeasuring);
+                            if (!isMeasuring) setPopupInfo(null);
+                        }}
+                        className={`p-2.5 rounded-lg shadow-lg border transition-all flex items-center gap-2 font-medium text-sm ${isMeasuring
+                            ? 'bg-blue-600 text-white border-blue-500 ring-4 ring-blue-500/20'
+                            : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
+                            }`}
+                        title={isMeasuring ? "Stop Measuring" : "Measure Distance"}
+                    >
+                        <Ruler className={`w-5 h-5 ${isMeasuring ? 'animate-pulse' : 'text-slate-500'}`} />
+                        <span className={isMeasuring ? '' : 'hidden md:inline'}>{isMeasuring ? 'Measuring...' : 'Measure'}</span>
+                        {isMeasuring && (
+                            <span className="flex h-2 w-2 relative">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-100 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-50"></span>
+                            </span>
+                        )}
+                    </button>
+                </div>
+
+                <button
+                    onClick={toggleMapStyle}
+                    className="bg-white text-slate-700 hover:bg-slate-50 p-2.5 rounded-lg shadow-lg border border-slate-200 flex items-center gap-2 transition-all font-medium text-sm"
+                    title={mapStyle === STYLE_TERRAIN ? "Switch to Satellite" : "Switch to Terrain"}
+                >
+                    {mapStyle === STYLE_TERRAIN ? (
+                        <>
+                            <Satellite className="w-5 h-5 text-blue-600" />
+                            <span className="hidden md:inline">Satellite</span>
+                        </>
+                    ) : (
+                        <>
+                            <Mountain className="w-5 h-5 text-green-600" />
+                            <span className="hidden md:inline">Terrain</span>
+                        </>
+                    )}
+                </button>
+            </div>
         </div>
     );
 }

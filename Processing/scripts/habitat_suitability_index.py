@@ -156,8 +156,8 @@ def build_suitability(
     slope_deg: np.ndarray,
     dist_water_m: np.ndarray,
     dist_roads_m: np.ndarray,
-    weight_slope: float = 1,
-    weight_water: float = 1,
+    weight_slope: float = 1.5,
+    weight_water: float = 1.5,
     weight_roads: float = 1,
 ) -> np.ndarray:
     s_slope = score_slope(slope_deg)
