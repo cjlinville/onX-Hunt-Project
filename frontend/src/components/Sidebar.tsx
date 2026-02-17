@@ -24,6 +24,8 @@ interface SidebarProps {
     setShowElevationBands: (show: boolean) => void;
     showSlopeMask: boolean;
     setShowSlopeMask: (show: boolean) => void;
+    showHabitatSuitability: boolean;
+    setShowHabitatSuitability: (show: boolean) => void;
 }
 
 export function Sidebar({
@@ -37,7 +39,8 @@ export function Sidebar({
     naipYear, setNaipYear,
     showBHS, setShowBHS,
     showElevationBands, setShowElevationBands,
-    showSlopeMask, setShowSlopeMask
+    showSlopeMask, setShowSlopeMask,
+    showHabitatSuitability, setShowHabitatSuitability
 }: SidebarProps) {
     const [activeTab, setActiveTab] = useState('Layers');
 
@@ -202,6 +205,18 @@ export function Sidebar({
                                         />
                                         <AlertTriangle className="w-3.5 h-3.5 text-red-500 mr-3" />
                                         <span className="text-sm">Steep Slope ({'>'}45°)</span>
+                                    </label>
+
+                                    {/* Habitat Suitability */}
+                                    <label className={`flex items-center p-2 rounded cursor-pointer border transition-all duration-200 ${showHabitatSuitability ? 'bg-slate-800 border-green-600/50 text-white shadow-sm' : 'border-transparent hover:bg-slate-800/50 hover:text-slate-200'}`}>
+                                        <input
+                                            type="checkbox"
+                                            className="hidden"
+                                            checked={showHabitatSuitability}
+                                            onChange={(e) => setShowHabitatSuitability(e.target.checked)}
+                                        />
+                                        <Trees className="w-4 h-4 text-green-500 mr-3" />
+                                        <span className="text-sm">Habitat Suitability Index</span>
                                     </label>
                                 </div>
                             </CollapsibleSection>

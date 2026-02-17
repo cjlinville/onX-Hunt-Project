@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import Map, { NavigationControl, Source, Layer, Popup } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Mountain, Satellite, X } from 'lucide-react';
@@ -16,6 +16,7 @@ const PARCELS_URL = '/data/parcels.geojson';
 const BHS_DISTRIBUTION_URL = '/data/distribution.geojson';
 const ELEVATION_BANDS_URL = '/data/elevation_bands.geojson';
 const SLOPE_MASK_URL = '/data/slope_mask.geojson';
+const HABITAT_SUITABILITY_URL = '/data/habitat_suitability.json';
 
 const bhsLayer = {
     id: 'bhs-distribution',
@@ -261,6 +262,14 @@ const slopeMaskLayer: any = {
     }
 };
 
+const habitatSuitabilityLayer: any = {
+    id: 'habitat-suitability',
+    type: 'raster' as const,
+    paint: {
+        'raster-opacity': 0.7
+    }
+};
+
 interface MapComponentProps {
     mapStyle: string;
     setMapStyle: (style: string) => void;
@@ -275,16 +284,27 @@ interface MapComponentProps {
     showBHS: boolean;
     showElevationBands: boolean;
     showSlopeMask: boolean;
+    showHabitatSuitability: boolean;
 }
 
 export function MapComponent({
     mapStyle, setMapStyle,
     showLocalDistricts, showNHD, showMTRoads, showTrails, showPublicLands, showParcels,
-    showNAIP, naipYear, showBHS, showElevationBands, showSlopeMask
+    showNAIP, naipYear, showBHS, showElevationBands, showSlopeMask,
+    showHabitatSuitability
 }: MapComponentProps) {
     const [cursorCoords, setCursorCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [popupInfo, setPopupInfo] = useState<{ feature: any; lngLat: { lng: number; lat: number } } | null>(null);
     const [cursor, setCursor] = useState<string>('auto');
+    const [suitabilityMeta, setSuitabilityMeta] = useState<{ bounds: number[][]; url: string } | null>(null);
+
+    // Fetch suitability metadata
+    useEffect(() => {
+        fetch(HABITAT_SUITABILITY_URL + "?v=" + Date.now()) // cache busting
+            .then(res => res.json())
+            .then(data => setSuitabilityMeta(data))
+            .catch(err => console.error("Error loading suitability meta:", err));
+    }, []);
 
     const toggleMapStyle = () => {
         setMapStyle(mapStyle === STYLE_TERRAIN ? STYLE_SATELLITE : STYLE_TERRAIN);
@@ -304,8 +324,9 @@ export function MapComponent({
         }
         if (showTrails) ids.push('fs-trails-hit');
         if (showLocalDistricts) ids.push('hunting-district-hit');
+        if (showHabitatSuitability) ids.push('habitat-suitability');
         return ids;
-    }, [showElevationBands, showSlopeMask, showPublicLands, showBHS, showMTRoads, showNHD, showTrails, showLocalDistricts]);
+    }, [showElevationBands, showSlopeMask, showPublicLands, showBHS, showMTRoads, showNHD, showTrails, showLocalDistricts, showHabitatSuitability]);
 
     const onMouseEnter = useCallback(() => setCursor('pointer'), []);
     const onMouseLeave = useCallback(() => setCursor('auto'), []);
@@ -368,6 +389,17 @@ export function MapComponent({
                 {showSlopeMask && (
                     <Source id="slope-mask" type="geojson" data={SLOPE_MASK_URL}>
                         <Layer {...slopeMaskLayer} />
+                    </Source>
+                )}
+
+                {showHabitatSuitability && suitabilityMeta && (
+                    <Source
+                        id="habitat-suitability"
+                        type="image"
+                        url={suitabilityMeta.url}
+                        coordinates={suitabilityMeta.bounds as any}
+                    >
+                        <Layer {...habitatSuitabilityLayer} />
                     </Source>
                 )}
 

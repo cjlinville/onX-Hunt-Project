@@ -29,7 +29,7 @@ def push_to_map(config):
             continue
             
         print(f"Scanning {source_dir.name}...")
-        files = list(source_dir.glob("*.geojson"))
+        files = list(source_dir.glob("*.geojson")) + list(source_dir.glob("*.png")) + list(source_dir.glob("*.json"))
         for file in files:
             shutil.copy(file, dest_path / file.name)
             print(f"Copied {file.name}")

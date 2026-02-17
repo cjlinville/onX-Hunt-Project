@@ -270,8 +270,69 @@ def main(config):
             print(f"Saved processed file to {out_path}")
 
 
-    process_topography(config)
-    habitat_suitability_index.main(config)
+    suitability_tif = habitat_suitability_index.main(config)
+    suitability_tif = Path(config['environment']['processed_data_dir']) / "habitat_suitability.tif"
+    
+    if suitability_tif.exists():
+        print("\nExporting habitat suitability to PNG...")
+        import matplotlib.pyplot as plt
+        from PIL import Image
+        from pyproj import Transformer
+
+        with rasterio.open(suitability_tif) as src:
+            data = src.read(1)
+            bounds = src.bounds
+            crs = src.crs
+
+            # Normalize 0-100 to 0-1
+            mask = ~np.isnan(data)
+            norm_data = np.zeros_like(data)
+            norm_data[mask] = data[mask] / 100.0
+
+            # Apply colormap
+            sm = plt.cm.ScalarMappable(cmap='YlGn')
+            rgba = sm.to_rgba(norm_data)
+            
+            # Set alpha for NaNs
+            rgba[~mask, 3] = 0
+            
+            # Convert to 8-bit
+            rgba_8bit = (rgba * 255).astype(np.uint8)
+            
+            # Save as PNG
+            img = Image.fromarray(rgba_8bit)
+            png_path = dest_dir / "habitat_suitability.png"
+            img.save(png_path)
+            print(f"Saved {png_path}")
+
+            # Calculate bounds in 4326 for Mapbox
+            # Mapbox ImageSource needs: [topleft, topright, bottomright, bottomleft]
+            # rasterio bounds: (left, bottom, right, top)
+            
+            transformer = Transformer.from_crs(crs, "EPSG:4326", always_xy=True)
+            
+            # nw, ne, se, sw
+            nw = transformer.transform(bounds.left, bounds.top)
+            ne = transformer.transform(bounds.right, bounds.top)
+            se = transformer.transform(bounds.right, bounds.bottom)
+            sw = transformer.transform(bounds.left, bounds.bottom)
+            
+            coords = [
+                [float(nw[0]), float(nw[1])],
+                [float(ne[0]), float(ne[1])],
+                [float(se[0]), float(se[1])],
+                [float(sw[0]), float(sw[1])]
+            ]
+
+            metadata = {
+                "bounds": coords,
+                "url": "/data/habitat_suitability.png"
+            }
+            
+            meta_path = dest_dir / "habitat_suitability.json"
+            with open(meta_path, 'w') as f:
+                json.dump(metadata, f, indent=2)
+            print(f"Saved {meta_path}")
 
 if __name__ == "__main__":
     import yaml

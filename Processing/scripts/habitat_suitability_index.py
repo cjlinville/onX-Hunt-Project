@@ -1,12 +1,30 @@
-from __future__ import annotations
-
+import os
+import subprocess
 from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
 import rasterio
+
+# Fix for PROJ initialization error and OSGeo4W path
+PROJ_PATH = r"C:\OSGEO4W\share\proj"
+os.environ["PROJ_LIB"] = PROJ_PATH
+os.environ["PROJ_DATA"] = PROJ_PATH
+os.environ["PATH"] = r"C:\OSGEO4W\bin;" + os.environ["PATH"]
+
+def run_command(cmd_list):
+    """Runs a shell command and raises an error if it fails."""
+    print(f"Running: {' '.join(cmd_list)}")
+    result = subprocess.run(cmd_list, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"STDOUT: {result.stdout}")
+        print(f"STDERR: {result.stderr}")
+        raise RuntimeError(f"Command failed: {cmd_list[0]}")
+    return result.stdout
+
 from rasterio.features import rasterize
 from rasterio.mask import mask
+from rasterio.warp import Resampling, calculate_default_transform, reproject
 from scipy.ndimage import distance_transform_edt, generic_filter
 
 
@@ -63,21 +81,14 @@ def compute_slope_degrees(dem: np.ma.MaskedArray, res_x: float, res_y: float) ->
     return np.degrees(slope_rad).astype("float32")
 
 
-def compute_ruggedness_tri(dem: np.ma.MaskedArray) -> np.ndarray:
-    z = dem.filled(np.nan).astype("float32")
+def reproject_raster_gdal(src_path: Path, dst_path: Path, dst_crs: str = "EPSG:3857"):
+    """Reprojects a raster file using gdalwarp."""
+    run_command(["gdalwarp", "-t_srs", dst_crs, "-r", "bilinear", "-overwrite", str(src_path), str(dst_path)])
 
-    def tri_window(values: np.ndarray) -> float:
-        center = values[4]
-        if np.isnan(center):
-            return np.nan
-        neighbors = np.delete(values, 4)
-        neighbors = neighbors[~np.isnan(neighbors)]
-        if neighbors.size == 0:
-            return np.nan
-        return float(np.mean(np.abs(neighbors - center)))
 
-    tri = generic_filter(z, tri_window, size=3, mode="nearest")
-    return tri.astype("float32")
+def calculate_slope_gdal(src_path: Path, dst_path: Path):
+    """Calculates slope in degrees using gdaldem."""
+    run_command(["gdaldem", "slope", str(src_path), str(dst_path), "-compute_edges"])
 
 
 def load_and_reproject_vector(vector_path: str, target_crs) -> gpd.GeoDataFrame:
@@ -128,42 +139,34 @@ def clamp01(x: np.ndarray) -> np.ndarray:
     return np.clip(x, 0.0, 1.0)
 
 
-def score_slope(slope_deg: np.ndarray, good_min: float = 30.0, good_max: float = 55.0) -> np.ndarray:
+def score_slope(slope_deg: np.ndarray, good_min: float = 15.0, good_max: float = 60.0) -> np.ndarray:
     return clamp01((slope_deg - good_min) / (good_max - good_min))
-
-
-def score_ruggedness(tri: np.ndarray, good_min: float = 2.0, good_max: float = 12.0) -> np.ndarray:
-    return clamp01((tri - good_min) / (good_max - good_min))
 
 
 def score_distance_to_water(dist_m: np.ndarray, best_within_m: float = 1500.0) -> np.ndarray:
     return clamp01(1.0 - (dist_m / best_within_m))
 
 
-def score_distance_from_roads(dist_m: np.ndarray, good_far_m: float = 2500.0) -> np.ndarray:
+def score_distance_from_roads(dist_m: np.ndarray, good_far_m: float = 1000.0) -> np.ndarray:
     return clamp01(dist_m / good_far_m)
 
 
 def build_suitability(
     dem: np.ma.MaskedArray,
     slope_deg: np.ndarray,
-    tri: np.ndarray,
     dist_water_m: np.ndarray,
     dist_roads_m: np.ndarray,
-    weight_slope: float = 0.40,
-    weight_rugged: float = 0.25,
-    weight_water: float = 0.20,
-    weight_roads: float = 0.15,
+    weight_slope: float = 1,
+    weight_water: float = 1,
+    weight_roads: float = 1,
 ) -> np.ndarray:
     s_slope = score_slope(slope_deg)
-    s_rug = score_ruggedness(tri)
     s_water = score_distance_to_water(dist_water_m)
     s_roads = score_distance_from_roads(dist_roads_m)
 
-    total_w = weight_slope + weight_rugged + weight_water + weight_roads
+    total_w = weight_slope + weight_water + weight_roads
     suitability_01 = (
         weight_slope * s_slope
-        + weight_rugged * s_rug
         + weight_water * s_water
         + weight_roads * s_roads
     ) / total_w
@@ -182,6 +185,8 @@ def write_geotiff(out_path: str, arr: np.ndarray, profile: dict):
         compress="deflate",
         predictor=2,
         tiled=True,
+        blockxsize=256,
+        blockysize=256,
     )
 
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
@@ -190,73 +195,103 @@ def write_geotiff(out_path: str, arr: np.ndarray, profile: dict):
         dst.write(arr.astype("float32"), 1)
 
 
-def main(config: dict) -> Path:
-    raw_dir = Path(config["environment"]["raw_data_dir"])
-    processed_dir = Path(config["environment"]["processed_data_dir"])
+def main(config: dict, write_debug_rasters: bool = False) -> Path:
+    with rasterio.env.Env(PROJ_LIB=PROJ_PATH, PROJ_DATA=PROJ_PATH):
+        print("Building Habitat Suitability Index")
 
-    unit_path = raw_dir / "hunting_district.geojson"
-    roads_path = raw_dir / "mt_roads.geojson"
-    waterbody_path = raw_dir / "nhd_waterbody.geojson"
-    flowline_path = raw_dir / "nhd_flowline.geojson"
+        raw_dir = Path(config["environment"]["raw_data_dir"])
+        processed_dir = Path(config["environment"]["processed_data_dir"])
 
-    # Pre-calculated rasters
-    dem_clipped_path = processed_dir / "dem_clipped.tif"
-    slope_degrees_path = processed_dir / "slope_degrees.tif"
+        unit_path = raw_dir / "hunting_district.geojson"
+        roads_path = raw_dir / "mt_roads.geojson"
+        waterbody_path = raw_dir / "nhd_waterbody.geojson"
+        flowline_path = raw_dir / "nhd_flowline.geojson"
 
-    out_path = None
-    if "outputs" in config and "suitability" in config["outputs"]:
-        out_path = Path(config["outputs"]["suitability"])
-    else:
-        out_path = processed_dir / "habitat_suitability.tif"
+        # Pre-calculated rasters
+        dem_clipped_path = processed_dir / "dem_clipped.tif"
+        dem_3857_path = processed_dir / "dem_3857.tif"
+        slope_3857_path = processed_dir / "slope_3857.tif"
 
-    # Load clipped DEM to get profile, transform, crs
-    with rasterio.open(dem_clipped_path) as src:
-        dem = src.read(1, masked=True)
-        profile = src.profile
-        transform = src.transform
-        crs = src.crs
-        res_x = abs(transform.a)
-        res_y = abs(transform.e)
+        out_path = None
+        if "outputs" in config and "suitability" in config["outputs"]:
+            out_path = Path(config["outputs"]["suitability"])
+        else:
+            out_path = processed_dir / "habitat_suitability.tif"
 
-    # Load pre-calculated slope
-    with rasterio.open(slope_degrees_path) as src:
-        slope_deg = src.read(1, masked=True)
+        # 1. Reproject DEM to Web Mercator (EPSG:3857) for metric processing using GDAL
+        print("Reprojecting DEM to Web Mercator (EPSG:3857) via GDAL...")
+        reproject_raster_gdal(dem_clipped_path, dem_3857_path, "EPSG:3857")
+        
+        # 2. Calculate Slope in 3857 via GDAL
+        print("Calculating slope via GDAL...")
+        calculate_slope_gdal(dem_3857_path, slope_3857_path)
 
-    # Load unit for vector clipping
-    unit = load_unit_boundary(str(unit_path), crs)
-    tri = compute_ruggedness_tri(dem)
+        # Load results
+        with rasterio.open(dem_3857_path) as src:
+            dem = src.read(1, masked=True)
+            transform_3857 = src.transform
+            res_x = abs(transform_3857.a)
+            res_y = abs(transform_3857.e)
+            profile_3857 = src.profile
+            crs_3857 = src.crs
 
-    roads_gdf = load_and_reproject_vector(str(roads_path), crs)
-    waterbody_gdf = load_and_reproject_vector(str(waterbody_path), crs)
-    flowline_gdf = load_and_reproject_vector(str(flowline_path), crs)
+        with rasterio.open(slope_3857_path) as src:
+            slope_deg = src.read(1, masked=True)
 
-    roads_gdf = clip_vector_to_unit(roads_gdf, unit)
-    waterbody_gdf = clip_vector_to_unit(waterbody_gdf, unit)
-    flowline_gdf = clip_vector_to_unit(flowline_gdf, unit)
+        # Load unit for clipping (reprojected to 3857)
+        unit = load_unit_boundary(str(unit_path), crs_3857)
 
-    # Combine water sources (polygons + lines) into a single “water” layer
-    water_gdf = gpd.GeoDataFrame(
-        geometry=np.concatenate([waterbody_gdf.geometry.values, flowline_gdf.geometry.values]),
-        crs=crs,
-    )
-    water_gdf = water_gdf[water_gdf.geometry.notna()].copy()
+        roads_gdf = load_and_reproject_vector(str(roads_path), crs_3857)
+        waterbody_gdf = load_and_reproject_vector(str(waterbody_path), crs_3857)
+        flowline_gdf = load_and_reproject_vector(str(flowline_path), crs_3857)
 
-    out_shape = dem.shape
-    roads_r = rasterize_to_match(roads_gdf, out_shape=out_shape, transform=transform)
-    water_r = rasterize_to_match(water_gdf, out_shape=out_shape, transform=transform)
+        # Combine water sources (polygons + lines) into a single “water” layer
+        water_gdf = gpd.GeoDataFrame(
+            geometry=np.concatenate([waterbody_gdf.geometry.values, flowline_gdf.geometry.values]),
+            crs=crs_3857,
+        )
+        water_gdf = water_gdf[water_gdf.geometry.notna()].copy()
 
-    dist_roads_m = distance_in_meters(roads_r, res_x=res_x, res_y=res_y)
-    dist_water_m = distance_in_meters(water_r, res_x=res_x, res_y=res_y)
+        out_shape = dem.shape
+        roads_r = rasterize_to_match(roads_gdf, out_shape=out_shape, transform=transform_3857)
+        water_r = rasterize_to_match(water_gdf, out_shape=out_shape, transform=transform_3857)
 
-    suitability = build_suitability(
-        dem=dem,
-        slope_deg=slope_deg,
-        tri=tri,
-        dist_water_m=dist_water_m,
-        dist_roads_m=dist_roads_m,
-    )
+        dist_roads_m = distance_in_meters(roads_r, res_x=res_x, res_y=res_y)
+        dist_water_m = distance_in_meters(water_r, res_x=res_x, res_y=res_y)
 
-    write_geotiff(str(out_path), suitability, profile)
-    print(f"Wrote: {out_path}")
+        if write_debug_rasters:
+            print("Writing debug rasters (EPSG:3857)...")
+            write_geotiff(str(processed_dir / "debug_dist_roads.tif"), dist_roads_m, profile_3857)
+            write_geotiff(str(processed_dir / "debug_dist_water.tif"), dist_water_m, profile_3857)
+            
+            # Ensure we can call filled() safely
+            slope_for_debug = slope_deg.filled(np.nan) if hasattr(slope_deg, "filled") else slope_deg
+            write_geotiff(str(processed_dir / "debug_slope.tif"), slope_for_debug, profile_3857)
 
-    return out_path
+        suitability_3857 = build_suitability(
+            dem=dem,
+            slope_deg=slope_deg.filled(np.nan) if hasattr(slope_deg, "filled") else slope_deg,
+            dist_water_m=dist_water_m,
+            dist_roads_m=dist_roads_m,
+        )
+
+        # Write temp suitability in 3857
+        suitability_3857_path = processed_dir / "suitability_3857.tif"
+        write_geotiff(str(suitability_3857_path), suitability_3857, profile_3857)
+
+        # 3. Reproject Suitability back to EPSG:4326 for Mapbox via GDAL
+        print("Reprojecting Suitability back to EPSG:4326 via GDAL...")
+        reproject_raster_gdal(suitability_3857_path, out_path, "EPSG:4326")
+        
+        print(f"Wrote: {out_path}")
+
+        return out_path
+
+
+if __name__ == "__main__":
+    # for testing purposes
+    import yaml
+
+    config_path = Path(__file__).parent.parent / "config.yaml"
+    config = yaml.safe_load(open(config_path))
+    main(config, write_debug_rasters=True)

@@ -18,6 +18,7 @@ function App() {
   const [showElevationBands, setShowElevationBands] = useState(false);
   const [showSlopeMask, setShowSlopeMask] = useState(false);
   const [showParcels, setShowParcels] = useState(false);
+  const [showHabitatSuitability, setShowHabitatSuitability] = useState(false);
 
   return (
     <div className="flex h-screen w-screen bg-slate-50 overflow-hidden">
@@ -44,6 +45,8 @@ function App() {
         setShowElevationBands={setShowElevationBands}
         showSlopeMask={showSlopeMask}
         setShowSlopeMask={setShowSlopeMask}
+        showHabitatSuitability={showHabitatSuitability}
+        setShowHabitatSuitability={setShowHabitatSuitability}
       />
       <main className="flex-1 h-full relative">
         <MapComponent
@@ -60,6 +63,7 @@ function App() {
           showBHS={showBHS}
           showElevationBands={showElevationBands}
           showSlopeMask={showSlopeMask}
+          showHabitatSuitability={showHabitatSuitability}
         />
       </main>
     </div>
