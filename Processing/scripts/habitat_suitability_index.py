@@ -139,8 +139,28 @@ def clamp01(x: np.ndarray) -> np.ndarray:
     return np.clip(x, 0.0, 1.0)
 
 
-def score_slope(slope_deg: np.ndarray, good_min: float = 15.0, good_max: float = 60.0) -> np.ndarray:
-    return clamp01((slope_deg - good_min) / (good_max - good_min))
+def score_slope(slope_deg: np.ndarray) -> np.ndarray:
+    """
+    Score slope based on bighorn sheep habitat preferences.
+    0-20°: 0.3 (low suitability - too flat)
+    20-30°: 0.6 (moderate suitability)
+    30°+: 1.0 (high suitability - preferred steep terrain)
+    """
+    score = np.zeros_like(slope_deg, dtype=np.float32)
+    
+    # 0-20 degrees: score = 0.3
+    mask_flat = slope_deg < 20.0
+    score[mask_flat] = 0.3
+    
+    # 20-30 degrees: score = 0.6
+    mask_moderate = (slope_deg >= 20.0) & (slope_deg < 30.0)
+    score[mask_moderate] = 0.6
+    
+    # 30+ degrees: score = 1.0
+    mask_steep = slope_deg >= 30.0
+    score[mask_steep] = 1.0
+    
+    return score
 
 
 def score_distance_to_water(dist_m: np.ndarray, best_within_m: float = 1500.0) -> np.ndarray:

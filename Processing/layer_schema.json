@@ -1,0 +1,96 @@
+{
+    "hunting_district.geojson": {
+        "crs": "EPSG:4326",
+        "geometry": "Polygon",
+        "fields": {
+            "unit_id": "str",
+            "species": "str",
+            "unit_name": "str"
+        }
+    },
+    "public_lands.geojson": {
+        "crs": "EPSG:4326",
+        "geometry": "Polygon",
+        "fields": {
+            "owner_type": "str",
+            "agency": "str",
+            "public_access": "str"
+        }
+    },
+    "parcels.geojson": {
+        "crs": "EPSG:4326",
+        "geometry": "Polygon",
+        "fields": {
+            "Owner": "str",
+            "Total_Value": "float"
+        }
+    },
+    "mt_roads.geojson": {
+        "crs": "EPSG:4326",
+        "geometry": "LineString",
+        "fields": {
+            "Name": "str",
+            "Road_Class": "str",
+            "surface": "str",
+            "motorized_access": "str"
+        }
+    },
+    "fs_trails.geojson": {
+        "crs": "EPSG:4326",
+        "geometry": "LineString",
+        "fields": {
+            "Name": "str",
+            "Trail_Type": "str",
+            "Motorized Use": "str",
+            "Snowmobile Use": "str"
+        }
+    },
+    "nhd_flowline.geojson": {
+        "crs": "EPSG:4326",
+        "geometry": "LineString",
+        "fields": {
+            "Name": "str"
+        }
+    },
+    "nhd_waterbody.geojson": {
+        "crs": "EPSG:4326",
+        "geometry": "Polygon",
+        "fields": {
+            "Name": "str"
+        }
+    },
+    "nhd_area.geojson": {
+        "crs": "EPSG:4326",
+        "geometry": "Polygon",
+        "fields": {
+            "Name": "str",
+            "Water_Type": "str"
+        }
+    },
+    "distribution.geojson": {
+        "crs": "EPSG:4326",
+        "geometry": "Polygon",
+        "fields": {
+            "Range": "str"
+        }
+    },
+    "elevation_bands.geojson": {
+        "crs": "EPSG:4326",
+        "geometry": "Polygon",
+        "fields": {
+            "band_id": "int",
+            "label": "str",
+            "min_m": "float",
+            "max_m": "float"
+        }
+    },
+    "slope_mask.geojson": {
+        "crs": "EPSG:4326",
+        "geometry": "Polygon",
+        "fields": {
+            "slope_class": "int",
+            "label": "str",
+            "min_deg": "int"
+        }
+    }
+}

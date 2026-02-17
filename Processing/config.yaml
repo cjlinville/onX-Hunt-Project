@@ -1,11 +1,11 @@
 unit:
-  District_ID: 102
+  District_ID: 423
   Species: bighorn_sheep
   buffer_distance_miles: 1.0
 
 steps:
   get_data: false
-  terrain_derivatives: false
+  terrain_derivatives: true
   process_data: true
   push_to_map: true
 
@@ -17,6 +17,8 @@ environment:
 URLS:
   Hunting_Districts: "https://services3.arcgis.com/Cdxz8r11hT0MGzg1/arcgis/rest/services/ADMBND_HD_SHEEP/FeatureServer/0"
   NHD_MAPSERVER: "https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer"
+
+  NAIP: "https://gisservicemt.gov/arcgis/rest/services/MSDI_Framework/NAIP_{year}/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png&transparent=true&f=image"
   
   Feature_Services:
     - name: "FS_Trails"

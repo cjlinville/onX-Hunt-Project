@@ -1,0 +1,210 @@
+{
+    "hunting_district.geojson": {
+        "target_crs": "EPSG:4326",
+        "geometry_type": "Polygon",
+        "description": "official boundary for the hunting district",
+        "fields": {
+            "unit_id": {
+                "source": [
+                    "HD_ID"
+                ],
+                "required": true
+            },
+            "species": {
+                "source": [
+                    "SPECIES"
+                ]
+            },
+            "unit_name": {
+                "source": [
+                    "NAME"
+                ]
+            }
+        }
+    },
+    "public_lands.geojson": {
+        "target_crs": "EPSG:4326",
+        "geometry_type": "Polygon",
+        "fields": {
+            "owner_type": {
+                "source": [
+                    "SITETYPE"
+                ]
+            },
+            "agency": {
+                "source": [
+                    "SITENAME"
+                ]
+            },
+            "public_access": {
+                "source": [
+                    "PUBLIC_ACCESS"
+                ]
+            }
+        }
+    },
+    "parcels.geojson": {
+        "target_crs": "EPSG:4326",
+        "geometry_type": "Polygon",
+        "fields": {
+            "Owner": {
+                "source": [
+                    "OwnerName"
+                ]
+            },
+            "Total_Value": {
+                "source": [
+                    "TotalValue"
+                ]
+            }
+        }
+    },
+    "mt_roads.geojson": {
+        "target_crs": "EPSG:4326",
+        "geometry_type": "LineString",
+        "fields": {
+            "Name": {
+                "source": [
+                    "LSt_Name",
+                    "NAME",
+                    "FULL_NAME"
+                ]
+            },
+            "Road_Class": {
+                "source": [
+                    "ROADCLASS"
+                ]
+            },
+            "surface": {
+                "source": [
+                    "SURFACE"
+                ]
+            },
+            "motorized_access": {
+                "source": [
+                    "ACCESS"
+                ],
+                "value_map": {
+                    "Y": "yes",
+                    "N": "no",
+                    "OPEN": "yes",
+                    "CLOSED": "no"
+                }
+            }
+        }
+    },
+    "fs_trails.geojson": {
+        "target_crs": "EPSG:4326",
+        "geometry_type": "LineString",
+        "fields": {
+            "Name": {
+                "source": [
+                    "TRAIL_NAME",
+                    "NAME"
+                ]
+            },
+            "Trail_Type": {
+                "source": [
+                    "TRAIL_TYPE"
+                ]
+            },
+            "Motorized Use": {
+                "source": [
+                    "TERRA_MOTORIZED"
+                ]
+            },
+            "Snowmobile Use": {
+                "source": [
+                    "SNOW_MOTORIZED"
+                ]
+            }
+        }
+    },
+    "nhd_flowline.geojson": {
+        "target_crs": "EPSG:4326",
+        "geometry_type": "LineString",
+        "fields": {
+            "Name": {
+                "source": [
+                    "GNIS_NAME",
+                    "gnis_name"
+                ]
+            }
+        }
+    },
+    "nhd_waterbody.geojson": {
+        "target_crs": "EPSG:4326",
+        "geometry_type": "Polygon",
+        "fields": {
+            "Name": {
+                "source": [
+                    "GNIS_NAME",
+                    "gnis_name"
+                ]
+            }
+        }
+    },
+    "nhd_area.geojson": {
+        "target_crs": "EPSG:4326",
+        "geometry_type": "Polygon",
+        "fields": {
+            "Name": {
+                "source": [
+                    "GNIS_NAME"
+                ]
+            },
+            "Water_Type": {
+                "source": [
+                    "FTYPE"
+                ]
+            }
+        }
+    },
+    "distribution.geojson": {
+        "target_crs": "EPSG:4326",
+        "geometry_type": "Polygon",
+        "fields": {
+            "Range": {
+                "source": [
+                    "USETYPE"
+                ],
+                "value_map": {
+                    "G": "General Range",
+                    "GW": "Winter Range"
+                }
+            }
+        }
+    },
+    "elevation_bands.geojson": {
+        "target_crs": "EPSG:4326",
+        "geometry_type": "Polygon",
+        "fields": {
+            "band_id": {
+                "source": [
+                    "band_id"
+                ]
+            }
+        }
+    },
+    "slope_mask.geojson": {
+        "target_crs": "EPSG:4326",
+        "geometry_type": "Polygon",
+        "fields": {
+            "slope_class": {
+                "source": [
+                    "slope_class"
+                ]
+            },
+            "label": {
+                "source": [
+                    "label"
+                ]
+            },
+            "min_deg": {
+                "source": [
+                    "min_deg"
+                ]
+            }
+        }
+    }
+}

@@ -76,7 +76,7 @@ def dissolve_by_name(gdf):
         return gdf.dissolve("Owner")
     return gdf
 
-def main(file,gdf,field_mappings):
+def main(file, gdf):
     if "flowline" in file.name:
         gdf = remove_isolated_edges(gdf)
         gdf = remove_lines_with_no_name(gdf)
