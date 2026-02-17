@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { MapComponent } from './components/Map';
+import { Menu } from 'lucide-react';
 
 export const STYLE_TERRAIN = 'mapbox://styles/mapbox/outdoors-v12';
 export const STYLE_SATELLITE = 'mapbox://styles/cjlinville/cmljzr1ps004l01sp15xj9941';
@@ -20,9 +21,31 @@ function App() {
   const [showParcels, setShowParcels] = useState(false);
   const [showHabitatSuitability, setShowHabitatSuitability] = useState(false);
 
+  // Mobile Support State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
-    <div className="flex h-screen w-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen w-screen bg-slate-50 overflow-hidden relative">
+      {/* Mobile Backdrop */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-40 md:hidden transition-opacity animate-in fade-in duration-300"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setIsSidebarOpen(true)}
+        className="fixed top-4 left-4 z-30 p-3 bg-slate-900 text-white rounded-xl shadow-2xl border border-slate-700 md:hidden hover:bg-slate-800 active:scale-95 transition-all"
+        title="Open Settings"
+      >
+        <Menu className="w-6 h-6" />
+      </button>
+
       <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
         showLocalDistricts={showLocalDistricts}
         setShowLocalDistricts={setShowLocalDistricts}
         showNHD={showNHD}

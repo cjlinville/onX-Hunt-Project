@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Layers, Map as MapIcon, Mountain, Trees, Info, Car, Camera, PawPrint, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
+import { Layers, Map as MapIcon, Mountain, Trees, Info, Car, Camera, PawPrint, AlertTriangle, ChevronDown, ChevronRight, X } from 'lucide-react';
 
 interface SidebarProps {
+    isOpen: boolean;
+    onClose: () => void;
     showLocalDistricts: boolean;
     setShowLocalDistricts: (show: boolean) => void;
     showNHD: boolean;
@@ -76,6 +78,7 @@ const LAYER_METADATA: Record<string, { description: string; source: string }> = 
 };
 
 export function Sidebar({
+    isOpen, onClose,
     showLocalDistricts, setShowLocalDistricts,
     showNHD, setShowNHD,
     showMTRoads, setShowMTRoads,
@@ -93,10 +96,22 @@ export function Sidebar({
     const [showInfoTab, setShowInfoTab] = useState<string | null>(null);
 
     return (
-        <div className="h-full w-16 md:w-80 bg-slate-900 border-r border-slate-700 flex flex-col text-slate-300 transition-all duration-300 ease-in-out">
-            <div className="p-4 flex items-center justify-center md:justify-start border-b border-slate-700 shrink-0">
-                <MapIcon className="w-8 h-8 text-blue-500 shrink-0" />
-                <span className="ml-3 font-bold text-xl text-white hidden md:block truncate">Hunt Map</span>
+        <div className={`
+            fixed inset-y-0 left-0 z-50 w-80 bg-slate-900 border-r border-slate-700 flex flex-col text-slate-300 transform transition-transform duration-300 ease-in-out
+            ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+            md:relative md:translate-x-0 md:w-80 shrink-0
+        `}>
+            <div className="p-4 flex items-center justify-between border-b border-slate-700 shrink-0">
+                <div className="flex items-center">
+                    <MapIcon className="w-8 h-8 text-blue-500 shrink-0" />
+                    <span className="ml-3 font-bold text-xl text-white truncate">Hunt Map</span>
+                </div>
+                <button
+                    onClick={onClose}
+                    className="md:hidden p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                >
+                    <X className="w-6 h-6" />
+                </button>
             </div>
 
             <nav className="flex-1 py-4 flex flex-col gap-2 overflow-y-auto">
@@ -108,7 +123,7 @@ export function Sidebar({
                 />
 
                 {activeTab === 'About' && (
-                    <div className="px-6 py-4 hidden md:block border-b border-slate-800 pb-6 text-sm text-slate-400 leading-relaxed">
+                    <div className="px-6 py-4 border-b border-slate-800 pb-6 text-sm text-slate-400 leading-relaxed">
                         <p className="mb-4 text-slate-300 font-medium">
                             Supporting hunting planning and in-field use for bighorn sheep hunting.
                         </p>
@@ -126,7 +141,7 @@ export function Sidebar({
                 />
 
                 {activeTab === 'Layers' && (
-                    <div className="px-4 py-2 hidden md:block border-b border-slate-800 pb-4">
+                    <div className="px-4 py-2 border-b border-slate-800 pb-4">
                         <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2">Data Layers</h3>
                         <div className="space-y-2">
                             {/* Regulation and Land Group */}
@@ -274,12 +289,12 @@ function SidebarItem({ icon, label, active = false, onClick }: { icon: React.Rea
         <div
             onClick={onClick}
             className={`
-        flex items-center justify-center md:justify-start px-4 py-3 cursor-pointer transition-colors
+        flex items-center px-4 py-3 cursor-pointer transition-colors
         ${active ? 'bg-slate-800 text-blue-400 border-r-2 border-blue-500 shadow-inner' : 'hover:bg-slate-800 hover:text-white'}
       `}
         >
             {icon}
-            <span className="ml-3 hidden md:block font-medium">{label}</span>
+            <span className="ml-3 font-medium">{label}</span>
         </div>
     );
 }
