@@ -302,6 +302,7 @@ export function MapComponent({
     const [isMeasuring, setIsMeasuring] = useState(false);
     const [measurementPoints, setMeasurementPoints] = useState<number[][]>([]);
     const [measurementUnit, setMeasurementUnit] = useState<'miles' | 'yards'>('miles');
+    const [isStyleLoaded, setIsStyleLoaded] = useState(false);
 
     const totalDistance = useMemo(() => {
         if (measurementPoints.length < 2) return 0;
@@ -384,163 +385,175 @@ export function MapComponent({
                 onClick={onClick}
                 cursor={cursor}
                 interactiveLayerIds={interactiveLayerIds}
+                onLoad={() => setIsStyleLoaded(true)}
+                onStyleData={(e) => {
+                    // When style finishes loading, dataType will be 'style'
+                    if (e.dataType === 'style') {
+                        setIsStyleLoaded(true);
+                    }
+                }}
             >
                 <NavigationControl position="top-right" />
 
-                {/* Measurement Path */}
-                {measurementPoints.length > 0 && (
-                    <Source id="measurement" type="geojson" data={{
-                        type: 'FeatureCollection',
-                        features: [
-                            {
-                                type: 'Feature',
-                                geometry: {
-                                    type: 'LineString',
-                                    coordinates: measurementPoints
-                                },
-                                properties: {}
-                            },
-                            ...measurementPoints.map((pt, i) => ({
-                                type: 'Feature',
-                                geometry: {
-                                    type: 'Point',
-                                    coordinates: pt
-                                },
-                                properties: { index: i }
-                            }))
-                        ]
-                    } as any}>
-                        <Layer
-                            id="measurement-line"
-                            type="line"
-                            paint={{
-                                'line-color': '#ffffff',
-                                'line-width': 3,
-                                'line-dasharray': [2, 1]
-                            }}
-                        />
-                        <Layer
-                            id="measurement-points"
-                            type="circle"
-                            paint={{
-                                'circle-radius': 4,
-                                'circle-color': '#3b82f6',
-                                'circle-stroke-width': 2,
-                                'circle-stroke-color': '#ffffff'
-                            }}
-                        />
-                    </Source>
-                )}
-
-                {showNAIP && (
-                    <Source
-                        key={naipYear}
-                        id={`naip-${naipYear}`}
-                        type="raster"
-                        tiles={[`https://gisservicemt.gov/arcgis/rest/services/MSDI_Framework/NAIP_${naipYear}/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png&transparent=true&f=image`]}
-                        tileSize={256}
-                    >
-                        <Layer
-                            id={`naip-layer-${naipYear}`}
-                            type="raster"
-                            paint={{ 'raster-opacity': 1.0 }}
-
-                        />
-                    </Source>
-                )}
-
-                {showElevationBands && (
-                    <Source id="elevation-bands" type="geojson" data={ELEVATION_BANDS_URL}>
-                        <Layer {...elevationBandsLayer} />
-                    </Source>
-                )}
-
-                {showSlopeMask && (
-                    <Source id="slope-mask" type="geojson" data={SLOPE_MASK_URL}>
-                        <Layer {...slopeMaskLayer} />
-                    </Source>
-                )}
-
-                {showHabitatSuitability && suitabilityMeta && (
-                    <Source
-                        id="habitat-suitability"
-                        type="image"
-                        url={suitabilityMeta.url}
-                        coordinates={suitabilityMeta.bounds as any}
-                    >
-                        <Layer {...habitatSuitabilityLayer} />
-                    </Source>
-                )}
-
-                {showPublicLands && (
-                    <Source id="public-lands" type="geojson" data={PUBLIC_LANDS_URL}>
-                        <Layer {...publicLandsLayer} />
-                    </Source>
-                )}
-
-                {showParcels && (
-                    <Source id="parcels" type="geojson" data={PARCELS_URL}>
-                        <Layer {...parcelsLayer} />
-                        <Layer {...parcelsLabelLayer} />
-                    </Source>
-                )}
-
-                {showBHS && (
-                    <Source id="bhs-distribution" type="geojson" data={BHS_DISTRIBUTION_URL}>
-                        <Layer {...bhsLayer} />
-                    </Source>
-                )}
-
-                {showMTRoads && (
-                    <Source id="mt-roads" type="geojson" data={MT_ROADS_URL}>
-                        <Layer {...mtRoadsLayer} />
-                        <Layer {...mtRoadsLabelLayer} />
-                        <Layer {...mtRoadsHitLayer} />
-                    </Source>
-                )}
-
-                {showNHD && (
+                {/* Only render sources/layers after style is loaded */}
+                {isStyleLoaded && (
                     <>
-                        <Source id="nhd-waterbodies" type="geojson" data={NHD_WATERBODY_URL}>
-                            <Layer {...nhdWaterbodyFillLayer} />
-                            <Layer {...nhdWaterbodyOutlineLayer} />
-                        </Source>
-                        <Source id="nhd-flowlines" type="geojson" data={NHD_FLOWLINE_URL}>
-                            <Layer {...nhdFlowlineLayer} />
-                            <Layer {...nhdFlowlineLabelLayer} />
-                            <Layer {...nhdFlowlineHitLayer} />
-                        </Source>
-                    </>
-                )}
-
-                {showTrails && (
-                    <Source id="fs-trails" type="geojson" data={FS_TRAILS_URL}>
-                        {selectedTrailName && (
-                            <Layer
-                                id="fs-trails-halo"
-                                type="line"
-                                filter={['==', ['get', 'Name'], selectedTrailName]}
-                                paint={{
-                                    'line-color': '#ffffff',
-                                    'line-width': 8,
-                                    'line-opacity': 0.75,
-                                    'line-blur': 2
-                                }}
-                                beforeId="fs-trails"
-                            />
+                        {/* Measurement Path */}
+                        {measurementPoints.length > 0 && (
+                            <Source id="measurement" type="geojson" data={{
+                                type: 'FeatureCollection',
+                                features: [
+                                    {
+                                        type: 'Feature',
+                                        geometry: {
+                                            type: 'LineString',
+                                            coordinates: measurementPoints
+                                        },
+                                        properties: {}
+                                    },
+                                    ...measurementPoints.map((pt, i) => ({
+                                        type: 'Feature',
+                                        geometry: {
+                                            type: 'Point',
+                                            coordinates: pt
+                                        },
+                                        properties: { index: i }
+                                    }))
+                                ]
+                            } as any}>
+                                <Layer
+                                    id="measurement-line"
+                                    type="line"
+                                    paint={{
+                                        'line-color': '#ffffff',
+                                        'line-width': 3,
+                                        'line-dasharray': [2, 1]
+                                    }}
+                                />
+                                <Layer
+                                    id="measurement-points"
+                                    type="circle"
+                                    paint={{
+                                        'circle-radius': 4,
+                                        'circle-color': '#3b82f6',
+                                        'circle-stroke-width': 2,
+                                        'circle-stroke-color': '#ffffff'
+                                    }}
+                                />
+                            </Source>
                         )}
-                        <Layer {...fsTrailsLayer} />
-                        <Layer {...fsTrailsLabelLayer} />
-                        <Layer {...fsTrailsHitLayer} />
-                    </Source>
-                )}
 
-                {showLocalDistricts && (
-                    <Source id="hunting-district" type="geojson" data={HUNTING_DISTRICT_URL}>
-                        <Layer {...huntingDistrictLineLayer} />
-                        <Layer {...huntingDistrictLabelLayer} />
-                        <Layer {...huntingDistrictHitLayer} />
-                    </Source>
+                        {showNAIP && (
+                            <Source
+                                key={naipYear}
+                                id={`naip-${naipYear}`}
+                                type="raster"
+                                tiles={[`https://gisservicemt.gov/arcgis/rest/services/MSDI_Framework/NAIP_${naipYear}/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png&transparent=true&f=image`]}
+                                tileSize={256}
+                            >
+                                <Layer
+                                    id={`naip-layer-${naipYear}`}
+                                    type="raster"
+                                    paint={{ 'raster-opacity': 1.0 }}
+
+                                />
+                            </Source>
+                        )}
+
+                        {showElevationBands && (
+                            <Source id="elevation-bands" type="geojson" data={ELEVATION_BANDS_URL}>
+                                <Layer {...elevationBandsLayer} />
+                            </Source>
+                        )}
+
+                        {showSlopeMask && (
+                            <Source id="slope-mask" type="geojson" data={SLOPE_MASK_URL}>
+                                <Layer {...slopeMaskLayer} />
+                            </Source>
+                        )}
+
+                        {showHabitatSuitability && suitabilityMeta && (
+                            <Source
+                                id="habitat-suitability"
+                                type="image"
+                                url={suitabilityMeta.url}
+                                coordinates={suitabilityMeta.bounds as any}
+                            >
+                                <Layer {...habitatSuitabilityLayer} />
+                            </Source>
+                        )}
+
+                        {showPublicLands && (
+                            <Source id="public-lands" type="geojson" data={PUBLIC_LANDS_URL}>
+                                <Layer {...publicLandsLayer} />
+                            </Source>
+                        )}
+
+                        {showParcels && (
+                            <Source id="parcels" type="geojson" data={PARCELS_URL}>
+                                <Layer {...parcelsLayer} />
+                                <Layer {...parcelsLabelLayer} />
+                            </Source>
+                        )}
+
+                        {showBHS && (
+                            <Source id="bhs-distribution" type="geojson" data={BHS_DISTRIBUTION_URL}>
+                                <Layer {...bhsLayer} />
+                            </Source>
+                        )}
+
+                        {showMTRoads && (
+                            <Source id="mt-roads" type="geojson" data={MT_ROADS_URL}>
+                                <Layer {...mtRoadsLayer} />
+                                <Layer {...mtRoadsLabelLayer} />
+                                <Layer {...mtRoadsHitLayer} />
+                            </Source>
+                        )}
+
+                        {showNHD && (
+                            <>
+                                <Source id="nhd-waterbodies" type="geojson" data={NHD_WATERBODY_URL}>
+                                    <Layer {...nhdWaterbodyFillLayer} />
+                                    <Layer {...nhdWaterbodyOutlineLayer} />
+                                </Source>
+                                <Source id="nhd-flowlines" type="geojson" data={NHD_FLOWLINE_URL}>
+                                    <Layer {...nhdFlowlineLayer} />
+                                    <Layer {...nhdFlowlineLabelLayer} />
+                                    <Layer {...nhdFlowlineHitLayer} />
+                                </Source>
+                            </>
+                        )}
+
+                        {showTrails && (
+                            <Source id="fs-trails" type="geojson" data={FS_TRAILS_URL}>
+                                {selectedTrailName && (
+                                    <Layer
+                                        id="fs-trails-halo"
+                                        type="line"
+                                        filter={['==', ['get', 'Name'], selectedTrailName]}
+                                        paint={{
+                                            'line-color': '#ffffff',
+                                            'line-width': 8,
+                                            'line-opacity': 0.75,
+                                            'line-blur': 2
+                                        }}
+                                        beforeId="fs-trails"
+                                    />
+                                )}
+                                <Layer {...fsTrailsLayer} />
+                                <Layer {...fsTrailsLabelLayer} />
+                                <Layer {...fsTrailsHitLayer} />
+                            </Source>
+                        )}
+
+                        {showLocalDistricts && (
+                            <Source id="hunting-district" type="geojson" data={HUNTING_DISTRICT_URL}>
+                                <Layer {...huntingDistrictLineLayer} />
+                                <Layer {...huntingDistrictLabelLayer} />
+                                <Layer {...huntingDistrictHitLayer} />
+                            </Source>
+                        )}
+                    </>
                 )}
 
                 {popupInfo && (
